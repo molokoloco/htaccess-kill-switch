@@ -153,6 +153,40 @@ Corollaire du meme mecanisme : Apache prefixe les variables d'environnement par 
 sous-requete. D'ou les **deux** lignes `Retry-After`, `env=JW_MAINT` et `env=REDIRECT_JW_MAINT`.
 Avec une seule, l'en-tete manque sur la reponse reellement envoyee.
 
+### Si vous administrez le serveur
+
+Le `.htaccess` est fait pour le cas ou l'on n'a pas la main sur la machine. Si vous l'avez, mettez la
+regle dans la configuration du serveur : elle y est plus rapide (aucun `.htaccess` a chercher et
+relire a chaque requete) et plus difficile a neutraliser par un fichier depose dans un repertoire
+d'upload.
+
+| Fichier | Pour |
+|---|---|
+| [`htaccess-kill-switch.conf`](htaccess-kill-switch.conf) | mutualise, aucun acces serveur — le cas par defaut |
+| [`vhost-apache-kill-switch.conf`](vhost-apache-kill-switch.conf) | VPS/dedie sous Apache |
+| [`vhost-nginx-kill-switch.conf`](vhost-nginx-kill-switch.conf) | VPS/dedie sous nginx |
+
+Quatre pieges specifiques a ces versions serveur, tous documentes dans les fichiers :
+
+1. **`AllowOverride None` coupe TOUS les `.htaccess`**, dont celui de WordPress. Ses regles de
+   permaliens doivent etre remontees dans le vhost, sinon toutes les URLs tombent en 404. Le vhost
+   Apache fourni contient deja ce bloc. Dans le doute, gardez `AllowOverride All` : vous perdez le
+   gain de vitesse, l'interrupteur fonctionne quand meme.
+2. **Sous nginx, `error_page 503 @maintenance;` s'ecrit SANS signe egal.** La doc officielle illustre
+   pourtant les locations nommees avec `error_page 404 = @fallback;`. Recopier ce `=` fait *adopter*
+   le code du gestionnaire : le 503 devient un 200, et le site se fait desindexer par la manoeuvre
+   censee l'en proteger.
+3. **`rewrite ^ /maintenance.html break;` degrade en 404** si le fichier manque, parce que le statut
+   de la derniere erreur l'emporte. `try_files /maintenance.html =503;` est la seule forme qui ne
+   peut pas degrader le code.
+4. **Sous nginx, tester `$uri` et non `$request_uri`** pour les exemptions : `$request_uri` inclut la
+   query string, donc `/robots.txt?v=2` ne matche pas l'ancre de fin et part en 503 — exactement le
+   cas que Google penalise.
+
+Le `if` au niveau `server` n'est pas un probleme, contrairement a ce qu'on lit partout : la page qui
+a fait sa reputation s'intitule *« If is Evil… when used in location context »* et indique
+explicitement qu'on peut remonter les `if` au niveau `server`, « ou c'est sur ».
+
 ### Ce que ca ne fait pas
 
 Ca coupe. Ca ne repare pas, ca ne desinfecte pas.
@@ -168,8 +202,11 @@ Ca coupe. Ca ne repare pas, ca ne desinfecte pas.
   bots, inutile comme controle d'acces. Un vrai verrou, c'est un `.htpasswd` ou un filtre IP.
 - **Ca ne surveille rien.** Personne n'est prevenu quand le site tombe pour de vrai. Brancher une
   sonde de disponibilite, et la configurer pour ne pas alerter sur les 503 volontaires.
-- **Ca depend d'Apache.** Sous nginx pur, il n'y a pas de `.htaccess` : la logique se transpose en
-  `try_files` et `return 503` dans le vhost, ce qui suppose un acces a la configuration serveur.
+- **Ca depend d'Apache**, du moins dans sa version `.htaccess`. Nginx ne lit pas de `.htaccess` : sa
+  configuration est centralisee, donc il faut un acces a la machine. L'equivalent exact est fourni
+  dans [`vhost-nginx-kill-switch.conf`](vhost-nginx-kill-switch.conf), audite contre la
+  documentation officielle. Sur un mutualise nginx, vous n'avez pas cet acces : demandez a
+  l'hebergeur.
 - **Ca laisse le cache tiers en travers.** Un CDN ou un cache de page peut continuer a servir des
   copies HTML pendant plusieurs minutes. Purger apres avoir bascule l'interrupteur.
 
@@ -255,6 +292,38 @@ Where there is none, install and configure an FTP client on the customer's machi
    explains the **two** `Retry-After` lines: Apache prefixes env vars with `REDIRECT_` in the
    subrequest.
 
+### If you run the server yourself
+
+The `.htaccess` version exists for the case where you have no access to the machine. If you do have
+it, put the rule in the server config instead: it is faster (no `.htaccess` lookup on every request)
+and it cannot be neutralised by a file dropped into an upload directory.
+
+| File | For |
+|---|---|
+| [`htaccess-kill-switch.conf`](htaccess-kill-switch.conf) | shared hosting, no server access — the default case |
+| [`vhost-apache-kill-switch.conf`](vhost-apache-kill-switch.conf) | Apache on a VPS or dedicated box |
+| [`vhost-nginx-kill-switch.conf`](vhost-nginx-kill-switch.conf) | nginx on a VPS or dedicated box |
+
+Four traps specific to the server-side versions, all documented inside the files:
+
+1. **`AllowOverride None` disables every `.htaccess`**, WordPress's included. Its permalink rules must
+   be moved into the vhost or every URL 404s on reload. The Apache vhost here already carries that
+   block. When in doubt keep `AllowOverride All`: you lose the speed gain, the switch still works.
+2. **On nginx, write `error_page 503 @maintenance;` with NO equals sign.** The official docs show
+   named locations as `error_page 404 = @fallback;`. Copying that `=` makes nginx *adopt* the
+   handler's status code: your 503 becomes a 200, and the site gets deindexed by the very manoeuvre
+   meant to protect it.
+3. **`rewrite ^ /maintenance.html break;` degrades to 404** when the file is missing, because the
+   status of the last error wins. `try_files /maintenance.html =503;` is the only form that cannot
+   downgrade the status code.
+4. **On nginx, test `$uri`, not `$request_uri`**, for the exemptions: `$request_uri` keeps the query
+   string, so `/robots.txt?v=2` fails the end anchor and gets a 503 — precisely the case Google
+   penalises.
+
+The `if` at `server` level is fine, contrary to what you will read everywhere: the page that made its
+reputation is titled *"If is Evil… when used in location context"* and explicitly says you may move
+`if` up to server level, "where it's safe".
+
 ### What it does not do
 
 It cuts. It does not fix, and it does not clean.
@@ -263,7 +332,10 @@ It cuts. It does not fix, and it does not clean.
 - Does not lock out an attacker already inside: stolen SFTP or admin sessions are unaffected.
 - Not access control: `/wp-admin` returns 503 like everything else. Use `.htpasswd` or an IP filter.
 - No monitoring: add an uptime probe, and configure it to ignore intentional 503s.
-- Apache only: on pure nginx, transpose to `try_files` plus `return 503` in the vhost.
+- Apache only, in its `.htaccess` form. Nginx reads no `.htaccess`: its config is centralised, so you
+  need access to the machine. The exact equivalent ships as
+  [`vhost-nginx-kill-switch.conf`](vhost-nginx-kill-switch.conf), audited against the official docs.
+  On shared nginx hosting you do not have that access: ask the host.
 - Third-party caches and CDNs may keep serving HTML copies. Purge after flipping the switch.
 
 ### License
