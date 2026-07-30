@@ -177,7 +177,7 @@ Ca coupe. Ca ne repare pas, ca ne desinfecte pas.
 
 MIT, voir [LICENSE](LICENSE).
 
-- Article detaille : <https://julienweb.fr/blog/mettre-site-wordpress-en-pause-htaccess/>
+- Article detaille : <https://julienweb.fr/blog/mettre-site-wordpress-en-pause-htaccess/11426/>
 - Site pirate, plainte, prestataires agrees : <https://www.cybermalveillance.gouv.fr/>
 - Auteur : Julien Guezennec, [julienweb.fr](https://julienweb.fr), contact@julienweb.fr
 
