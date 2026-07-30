@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mettre mon site en pause moi-même</title>
+<link href="https://fonts.googleapis.com/css2?family=Squada+One&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 1.05cm 1.5cm 0.95cm 1.5cm; }
+  :root {
+    --primary:#1E91D4; --accent:#5A4095; --secondary:#F5FF00;
+    --dark:#2A2746; --dark-text:#464169; --muted:#999999;
+    --light:#F2F5F7; --lightblue:#9ED5E1;
+    --grad:linear-gradient(135deg,#1E91D4 0%,#5A4095 100%);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  html,body { font-family:'Poppins',Arial,'Segoe UI Emoji','Segoe UI Symbol',sans-serif; font-size:10pt; color:var(--dark-text); line-height:1.35; background:#fff; }
+  h1,h2,h3,.brand { font-family:'Squada One',sans-serif; line-height:1.2; }
+
+  .topbar { background:var(--grad); color:#fff; padding:13px 22px; display:flex; justify-content:space-between; align-items:center; border-radius:8px; margin-bottom:12px; }
+  .topbar .brand { font-size:24px; color:#fff; letter-spacing:1px; }
+  .topbar .brand .accent { color:var(--secondary); }
+  .topbar .tagline { font-size:9pt; color:rgba(255,255,255,.85); text-transform:uppercase; letter-spacing:1.5px; }
+  .topbar .rightlab { text-align:right; font-size:8.5pt; color:rgba(255,255,255,.9); }
+  .topbar .rightlab strong { color:var(--secondary); font-size:11pt; }
+
+  .intro { font-size:9.5pt; margin-bottom:8px; }
+  .intro .name { font-weight:700; color:var(--accent); }
+  .intro .url { font-family:'Courier New',monospace; font-weight:700; color:var(--primary); }
+
+  .callout { background:#FFF8E1; border-left:4px solid var(--accent); padding:8px 13px; border-radius:0 4px 4px 0; margin-bottom:10px; font-size:9pt; }
+  .callout strong { color:var(--accent); }
+
+  h2.sec { font-family:'Squada One',sans-serif; font-size:14pt; color:var(--accent); letter-spacing:.5px; margin:9px 0 5px; padding-bottom:3px; border-bottom:2px solid var(--lightblue); page-break-after:avoid; }
+  h2.sec .u { font-size:9pt; color:var(--muted); font-family:'Poppins',sans-serif; font-weight:400; letter-spacing:0; }
+
+  .steps { display:flex; gap:7px; margin-bottom:9px; }
+  .step { flex:1; background:var(--light); border-radius:6px; padding:7px 8px 8px; font-size:8.5pt; line-height:1.32; page-break-inside:avoid; }
+  .step .n { display:inline-block; width:18px; height:18px; line-height:18px; text-align:center; border-radius:50%; background:var(--grad); color:#fff; font-family:'Squada One',sans-serif; font-size:11pt; margin-bottom:4px; }
+  .step .t { font-weight:700; color:var(--primary); text-transform:uppercase; font-size:7.5pt; letter-spacing:.4px; margin-bottom:3px; }
+
+  .mono { font-family:'Courier New',monospace; font-size:9.5pt; background:var(--light); padding:1px 5px; border-radius:3px; color:var(--dark); font-weight:700; white-space:nowrap; }
+
+  .switch { display:flex; align-items:stretch; gap:0; margin:0 0 10px; page-break-inside:avoid; }
+  .switch .box { flex:1; border:2px solid var(--lightblue); border-radius:6px; padding:7px 10px; text-align:center; }
+  .switch .box.on { border-color:#5CB85C; }
+  .switch .box.off { border-color:#D9534F; }
+  .switch .box .f { font-family:'Courier New',monospace; font-size:12pt; font-weight:700; color:var(--dark); display:block; }
+  .switch .box .s { font-size:8.5pt; color:var(--muted); }
+  .switch .box.on .s { color:#3D8B3D; font-weight:600; }
+  .switch .box.off .s { color:#C9302C; font-weight:600; }
+  .switch .arr { width:118px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:8pt; color:var(--accent); font-weight:600; text-align:center; padding:0 6px; }
+  .switch .arr .g { font-size:15pt; line-height:1; color:var(--primary); }
+
+  table.t { width:100%; border-collapse:collapse; margin-bottom:8px; font-size:9.5pt; page-break-inside:avoid; }
+  table.t td { padding:4px 8px; border-bottom:1px solid var(--light); vertical-align:top; }
+  table.t td.k { width:210px; color:var(--primary); font-weight:600; font-size:8.5pt; text-transform:uppercase; letter-spacing:.5px; }
+
+  .cols { display:flex; gap:16px; page-break-inside:avoid; }
+  .cols > div { flex:1; }
+  ul.tight { list-style:none; font-size:9pt; }
+  ul.tight li { padding-left:13px; position:relative; margin-bottom:3px; }
+  ul.tight li:before { content:"\25B8"; position:absolute; left:0; color:var(--primary); font-weight:700; }
+  ul.tight li b { color:var(--accent); }
+  ul.no li:before { content:"\2715"; color:#C9302C; font-size:8pt; }
+
+  .warn { background:#F6F2FB; border-left:4px solid var(--primary); padding:7px 12px; border-radius:0 4px 4px 0; font-size:9pt; margin-top:6px; }
+  .warn b { color:var(--accent); }
+
+  .foot { margin-top:8px; padding-top:6px; border-top:1px solid var(--lightblue); font-size:8.5pt; color:var(--muted); display:flex; justify-content:space-between; align-items:flex-end; }
+  .foot .b { font-family:'Squada One',sans-serif; font-size:12pt; color:var(--accent); letter-spacing:.5px; text-align:right; }
+  .foot .c { color:var(--dark-text); font-family:'Poppins',sans-serif; font-size:8.5pt; letter-spacing:0; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div>
+      <div class="brand">Julien<span class="accent">Web.fr</span> &#12484;</div>
+      <div class="tagline">Studio Internet &amp; Cybersécurité</div>
+    </div>
+    <div class="rightlab">Mode d'emploi<br><strong>Mettre mon site en pause</strong></div>
+  </div>
+
+  <p class="intro">Mode d'emploi <span class="name">générique</span>, remis au client par son prestataire. Il vous donne un interrupteur : fermer votre site au public vous-même, en deux minutes, sans rien installer et sans compétence technique.<br>
+  Il fonctionne dès lors que votre prestataire a posé sur votre hébergement l'interrupteur <span class="mono">.htaccess</span> décrit sur <span class="url">github.com/molokoloco/htaccess-kill-switch</span> (libre, réutilisable, re-brandable).</p>
+
+  <div class="callout">
+    <strong>À quoi il sert.</strong> Entre le moment où quelque chose cloche et celui où votre prestataire vous répond, il peut
+    s'écouler plusieurs heures. Cet interrupteur vous permet d'agir <em>tout de suite</em>. En cas de doute, servez-vous en :
+    une pause ne coûte rien, et elle se défait aussi vite qu'elle se pose.
+  </div>
+
+  <h2 class="sec">Le geste, en cinq étapes <span class="u">- environ deux minutes</span></h2>
+  <div class="steps">
+    <div class="step">
+      <span class="n">1</span>
+      <div class="t">Se connecter</div>
+      Ouvrez l'interface de votre hébergeur avec vos identifiants (chez IONOS : <b>login.ionos.fr</b>).
+    </div>
+    <div class="step">
+      <span class="n">2</span>
+      <div class="t">Ouvrir vos fichiers</div>
+      Cliquez la tuile <b>Hébergement</b>, puis <b>Utiliser l'espace Web</b> (le <b>WebTransfert</b>). La liste de vos fichiers s'affiche.
+    </div>
+    <div class="step">
+      <span class="n">3</span>
+      <div class="t">Aller à la racine</div>
+      Restez dans le dossier de départ, celui qui s'ouvre en premier : vous y voyez la ligne <span class="mono">wp-content</span>.
+    </div>
+    <div class="step">
+      <span class="n">4</span>
+      <div class="t">Repérer le fichier</div>
+      Cherchez dans la liste la ligne <span class="mono">PAUSE-OFF.txt</span>. C'est lui, l'interrupteur.
+    </div>
+    <div class="step">
+      <span class="n">5</span>
+      <div class="t">Renommer</div>
+      Menu au bout de la ligne, <b>Renommer</b>, tapez le nouveau nom en entier, enregistrez. C'est fait.
+    </div>
+  </div>
+
+  <div class="switch">
+    <div class="box on">
+      <span class="f">PAUSE-OFF.txt</span>
+      <span class="s">Site ouvert au public</span>
+    </div>
+    <div class="arr">
+      <span class="g">&#10132;</span>
+      je renomme<br>dans un sens<br>ou dans l'autre
+    </div>
+    <div class="box off">
+      <span class="f">PAUSE.txt</span>
+      <span class="s">Site en pause</span>
+    </div>
+  </div>
+
+  <h2 class="sec">Où se trouve ce fichier <span class="u">- un seul endroit à connaître</span></h2>
+  <table class="t">
+    <tr><td class="k">Votre site</td><td>À la <b>racine de votre espace web</b> : le dossier de départ, celui qui s'ouvre en premier, où vous voyez la ligne <span class="mono">wp-content</span>. Le mode d'emploi est aussi écrit à l'intérieur du fichier.</td></tr>
+  </table>
+
+  <div class="cols">
+    <div>
+      <h2 class="sec">Ce qui se passe</h2>
+      <ul class="tight">
+        <li>Vos visiteurs voient une <b>page de maintenance propre</b>, pas une page blanche ni une erreur.</li>
+        <li><b>Rien n'est perdu</b> : commandes déjà passées, produits, comptes clients. Votre site est seulement fermé au public.</li>
+        <li><b>Chaque site est indépendant</b> : mettre votre boutique en pause ne coupe pas un autre site voisin, et l'inverse.</li>
+        <li><b>Google n'est pas pénalisé</b> par une pause courte : le site répond « je reviens », pas « je n'existe plus ».</li>
+        <li>Le retour en ligne est <b>immédiat</b>, autant de fois que nécessaire.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="sec">Quand s'en servir</h2>
+      <ul class="tight">
+        <li>La page d'accueil affiche <b>n'importe quoi</b>, ou plus rien.</li>
+        <li>Vous recevez un <b>message d'alerte de l'hébergeur</b>.</li>
+        <li>Vous voyez des <b>contenus que vous ne reconnaissez pas</b> : produits, pages, commandes, comptes.</li>
+        <li>Le site se comporte <b>anormalement</b>, sans explication.</li>
+        <li>Dans le doute, mettez en pause : cela <b>coûte moins cher que de laisser tourner</b>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cols" style="margin-top:6px;">
+    <div>
+      <h2 class="sec">Ce que ça ne fait pas</h2>
+      <div class="warn" style="margin-top:0;">
+        Cet interrupteur <b>arrête l'hémorragie, il ne répare rien et ne désinfecte rien</b>. Il ferme la porte le temps que
+        quelqu'un regarde. Prévenez votre prestataire, et dites-lui pourquoi : c'est cette information qui oriente le
+        diagnostic. Une pause fait gagner du temps, elle ne remplace pas l'intervention.
+      </div>
+    </div>
+    <div>
+      <h2 class="sec">À ne pas faire</h2>
+      <ul class="tight no">
+        <li><b>Supprimer</b> le fichier : il se renomme, dans un sens ou dans l'autre, jamais il ne s'efface.</li>
+        <li><b>Le déplacer</b> dans un autre dossier, ou en semer des copies un peu partout.</li>
+        <li><b>Toucher au fichier</b> <span class="mono">.htaccess</span> : c'est lui, le vrai mécanisme.</li>
+        <li><b>Renommer à peu près</b> : le nom se tape en entier (la variante <span class="mono">pause.txt</span> en minuscules est tolérée).</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div>Mode d'emploi générique, à conserver près de vos identifiants d'hébergement.<br>
+    <span class="c">Prévenez votre prestataire dès que vous actionnez l'interrupteur.</span></div>
+    <div class="b">JulienWeb.fr<br><span class="c">htaccess-kill-switch</span></div>
+  </div>
+
+</body>
+</html>

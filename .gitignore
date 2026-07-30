@@ -1,0 +1,9 @@
+# OS junk
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+
+# Sauvegardes locales
+*.bak
+*~

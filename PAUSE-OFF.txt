@@ -1,0 +1,32 @@
+INTERRUPTEUR DE MAINTENANCE - votre-site.fr
+=======================================================
+
+ETAT ACTUEL : SITE EN LIGNE
+(ce fichier s'appelle PAUSE-OFF.txt, donc l'interrupteur est sur ARRET)
+
+POUR METTRE LE SITE EN PAUSE
+  Renommer ce fichier      PAUSE-OFF.txt   ->   PAUSE.txt
+  Effet immediat. Les visiteurs voient une page « maintenance en cours ».
+
+POUR REMETTRE LE SITE EN LIGNE
+  Renommer le fichier      PAUSE.txt       ->   PAUSE-OFF.txt
+  Effet immediat.
+
+OU SE TROUVE CE FICHIER
+  racine de l'espace web du site (le dossier ou l'on voit wp-admin,
+  wp-content, wp-config.php)
+
+A SAVOIR
+  - Respecter les MAJUSCULES : le nom exact est PAUSE.txt
+    (la variante pause.txt en minuscules est acceptee aussi)
+  - Ne pas supprimer ce fichier : renommez-le, dans un sens ou dans l'autre.
+  - Rien n'est perdu pendant la pause : commandes, produits, articles et
+    comptes restent en place, seule la consultation publique est suspendue.
+  - Chaque site a son propre interrupteur : mettre celui-ci en pause
+    n'affecte pas les autres sites de l'hebergement.
+  - Le site repond alors HTTP 503 pendant la pause. Les moteurs de
+    recherche comprennent « interruption temporaire » et ne desindexent pas.
+
+Renommer un fichier se fait depuis le gestionnaire de fichiers en ligne de
+l'hebergeur (clic droit > Renommer), ou depuis n'importe quel client FTP.
+Aucun acces au tableau de bord du site n'est necessaire.
