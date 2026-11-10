@@ -141,6 +141,20 @@ Chez ceux qui n'en ont pas, prévoir un client FTP installé et configuré sur l
 (FileZilla, WinSCP, Cyberduck) avant de lui remettre la procédure. Renommer un fichier reste une
 opération triviale en FTP, mais elle suppose un logiciel déjà prêt.
 
+### Garder la main pendant la pause
+
+Le bloc porte une ligne commentée pour laisser passer votre adresse IP : vous voyez le site, les
+visiteurs voient la page de maintenance.
+
+```apache
+# RewriteCond %{REMOTE_ADDR} !^203\.0\.113\.42$
+```
+
+Décommentez-la, mettez votre adresse IP publique avec les points échappés, une ligne par adresse.
+Derrière Cloudflare ou un autre proxy, `REMOTE_ADDR` porte l'adresse du proxy, pas la vôtre : la
+ligne ne marche pas telle quelle. Une box change d'adresse sans prévenir : vérifiez la vôtre le jour
+même.
+
 ### Les 3 pièges documentés
 
 **Piège 1 : `%{DOCUMENT_ROOT}` ment, et il ment sans erreur.**
@@ -309,6 +323,19 @@ else is dead. Both flag files return 403 over HTTP.
 | Gandi | no | SSH or FTP only |
 
 Where there is none, install and configure an FTP client on the customer's machine first.
+
+### Keep access during the pause
+
+The block ships a commented line that lets your own IP address through: you see the site, visitors
+get the maintenance page.
+
+```apache
+# RewriteCond %{REMOTE_ADDR} !^203\.0\.113\.42$
+```
+
+Uncomment it, put in your public IP with escaped dots, one line per address. Behind Cloudflare or
+any other proxy, `REMOTE_ADDR` holds the proxy's address, not yours: the line will not work as is.
+Home connections change address without notice: check yours on the day.
 
 ### The 3 documented traps
 
