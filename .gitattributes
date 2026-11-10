@@ -1,0 +1,12 @@
+# Les fichiers de ce depot sont destines a etre televerses tels quels sur un
+# serveur. Un .htaccess en fins de ligne Windows (CRLF) produit des erreurs 500
+# sur certains serveurs : tout le texte est donc normalise en LF, y compris dans
+# la copie de travail sous Windows.
+* text=auto eol=lf
+
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary

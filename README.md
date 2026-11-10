@@ -1,83 +1,105 @@
 # htaccess-kill-switch
 
-Un interrupteur marche/arret pour un site WordPress en mutualise, actionnable par le client seul,
-sans acces au tableau de bord, sans plugin, sans ligne de commande : il renomme un fichier.
+[![Licence MIT](https://img.shields.io/badge/licence-MIT-5A4095?style=flat-square)](LICENSE)
+[![Apache](https://img.shields.io/badge/Apache-2.4%2B%20.htaccess-D22128?style=flat-square&logo=apache&logoColor=white)](htaccess-kill-switch.conf)
+[![nginx](https://img.shields.io/badge/nginx-vhost%20fourni-009639?style=flat-square&logo=nginx&logoColor=white)](vhost-nginx-kill-switch.conf)
+[![WordPress](https://img.shields.io/badge/WordPress-sans%20plugin-21759B?style=flat-square&logo=wordpress&logoColor=white)](#le-probl%C3%A8me)
+[![HTTP 503](https://img.shields.io/badge/HTTP-503%20SEO--safe-FF6F00?style=flat-square)](#le-principe)
+![Dépendances : zéro](https://img.shields.io/badge/d%C3%A9pendances-0-brightgreen?style=flat-square)
+[![Article](https://img.shields.io/badge/article-julienweb.fr-1E91D4?style=flat-square)](https://julienweb.fr/blog/mettre-site-wordpress-en-pause-htaccess/11426/)
 
-`PAUSE-OFF.txt` -> `PAUSE.txt` : le site repond **HTTP 503** et sert une page de maintenance.
-`PAUSE.txt` -> `PAUSE-OFF.txt` : le site revient. Effet immediat, aucun cache a vider.
+**[Français](#fr) · [English](#en)**
+
+Un interrupteur marche/arrêt pour un site WordPress en mutualisé, actionnable par le client seul,
+sans accès au tableau de bord, sans plugin, sans ligne de commande : il renomme un fichier.
+
+`PAUSE-OFF.txt` → `PAUSE.txt` : le site répond **HTTP 503** et sert une page de maintenance.
+`PAUSE.txt` → `PAUSE-OFF.txt` : le site revient. Effet immédiat, aucun cache à vider.
 
 ---
 
 ## FR
 
-### Le probleme
+### Le problème
 
-Aucun hebergeur mutualise ne fournit de bouton « mettre mon site en pause ». Ni IONOS, ni OVHcloud,
+Aucun hébergeur mutualisé ne fournit de bouton « mettre mon site en pause ». Ni IONOS, ni OVHcloud,
 ni o2switch, ni Infomaniak. Le client qui veut couper son site n'a que des options destructrices :
-supprimer les fichiers, changer les DNS, resilier. Toutes sont difficiles a annuler et toutes
-coutent du SEO.
+supprimer les fichiers, changer les DNS, résilier. Toutes sont difficiles à annuler et toutes
+coûtent du SEO.
 
-Le plugin WordPress de maintenance ne repond pas au cas qui compte. Un plugin s'execute *dans*
-WordPress : il suppose que WordPress demarre, que la base repond, que l'admin est accessible, et que
-personne d'autre ne controle le site. Quand le site est pirate, ces quatre hypotheses tombent
-ensemble. Un site avec un webshell dans `wp-content/uploads/` continue de servir l'attaquant meme
-avec le mode maintenance active, parce que le webshell n'a pas besoin de WordPress pour tourner. Et
+Le plugin WordPress de maintenance ne répond pas au cas qui compte. Un plugin s'exécute *dans*
+WordPress : il suppose que WordPress démarre, que la base répond, que l'admin est accessible, et que
+personne d'autre ne contrôle le site. Quand le site est piraté, ces quatre hypothèses tombent
+ensemble. Un site avec un webshell dans `wp-content/uploads/` continue de servir l'attaquant même
+avec le mode maintenance activé, parce que le webshell n'a pas besoin de WordPress pour tourner. Et
 un site en erreur fatale PHP ne charge aucun plugin du tout.
 
-L'interrupteur decrit ici vit dans `.htaccess`, donc **au-dessus** de PHP et de WordPress. Il coupe
-avant que quoi que ce soit ne demarre. Il fonctionne sur un site casse, sur un site infecte, sur un
+L'interrupteur décrit ici vit dans `.htaccess`, donc **au-dessus** de PHP et de WordPress. Il coupe
+avant que quoi que ce soit ne démarre. Il fonctionne sur un site cassé, sur un site infecté, sur un
 site dont personne n'a plus le mot de passe admin.
 
-Origine : intervention de remise en ligne apres piratage d'une boutique WooCommerce, ou le client
-avait besoin de pouvoir refermer son site tout seul, a n'importe quelle heure, pendant que le
+Origine : intervention de remise en ligne après piratage d'une boutique WooCommerce, où le client
+avait besoin de pouvoir refermer son site tout seul, à n'importe quelle heure, pendant que le
 nettoyage se poursuivait.
 
 ### Le principe
 
-Deux pieces, rien d'autre.
+Deux pièces, rien d'autre.
 
-1. **Un fichier temoin** a la racine du site. Son *nom* porte l'etat : `PAUSE-OFF.txt` (en ligne) ou
+1. **Un fichier témoin** à la racine du site. Son *nom* porte l'état : `PAUSE-OFF.txt` (en ligne) ou
    `PAUSE.txt` (en pause). Aucun contenu n'est lu, seule l'existence du nom compte.
-2. **Un bloc `.htaccess`** qui teste la presence de ce fichier a chaque requete et, s'il le trouve,
+2. **Un bloc `.htaccess`** qui teste la présence de ce fichier à chaque requête et, s'il le trouve,
    renvoie 503 + `maintenance.html` + `Retry-After: 3600`.
 
 Pourquoi 503 et pas 403 ou 404 : le 503 est le seul code que Google traite comme « reviens plus
-tard ». L'exploration est suspendue, le classement est gele, rien n'est desindexe. Un 404 sur toutes
-les URL d'un site, tenu quelques jours, coute des mois de reprise. Le `Retry-After: 3600` annonce la
-duree estimee de l'interruption.
+tard ». L'exploration est suspendue, le classement est gelé, rien n'est désindexé. Un 404 sur toutes
+les URL d'un site, tenu quelques jours, coûte des mois de reprise. Le `Retry-After: 3600` annonce la
+durée estimée de l'interruption.
 
-`robots.txt` reste servi pendant la pause, sinon les robots repartent sur un cache et interpretent
+`robots.txt` reste servi pendant la pause, sinon les robots repartent sur un cache et interprètent
 mal la coupure. La page `maintenance.html` est autonome : pas de police Google, pas de CDN, pas de
-script, 1,7 ko environ, `noindex, follow`. Elle s'affiche meme si tout le reste du site est mort.
+script, 1,7 ko environ, `noindex, follow`. Elle s'affiche même si tout le reste du site est mort.
 
-Les fichiers temoins repondent 403 en HTTP, dans les deux etats : ils n'ont rien a faire sur le Web.
+Les fichiers témoins répondent 403 en HTTP, dans les deux états : ils n'ont rien à faire sur le Web.
 
-### Installation en 3 etapes
+### Ce que contient le dépôt
+
+| Fichier | Rôle |
+|---|---|
+| [`htaccess-kill-switch.conf`](htaccess-kill-switch.conf) | le bloc à coller en haut du `.htaccess` existant |
+| [`htaccess-complet-exemple.conf`](htaccess-complet-exemple.conf) | un `.htaccess` complet et durci, interrupteur inclus |
+| [`vhost-apache-kill-switch.conf`](vhost-apache-kill-switch.conf) | la même règle en configuration serveur Apache |
+| [`vhost-nginx-kill-switch.conf`](vhost-nginx-kill-switch.conf) | l'équivalent nginx, audité contre la doc officielle |
+| [`maintenance.html`](maintenance.html) | la page servie pendant la pause, autonome et `noindex` |
+| [`PAUSE-OFF.txt`](PAUSE-OFF.txt) | le fichier témoin, avec le mode d'emploi écrit dedans |
+| [`tutoriel-client/`](tutoriel-client/) | le pas-à-pas à remettre au client, en HTML et en PDF |
+
+### Installation en 3 étapes
 
 **1. Trouver le chemin absolu du docroot.**
-Il ressemble a `/kunden/homepages/NN/dXXXXXXXXX/htdocs` chez IONOS, `/home/COMPTE/www` chez
-OVHcloud, `/home/COMPTE/public_html` en cPanel. Le gestionnaire de fichiers de l'hebergeur l'affiche
-en general en haut de page. Sinon, poser trente secondes un fichier `chemin.php` a la racine :
+Il ressemble à `/kunden/homepages/NN/dXXXXXXXXX/htdocs` chez IONOS, `/home/COMPTE/www` chez
+OVHcloud, `/home/COMPTE/public_html` en cPanel. Le gestionnaire de fichiers de l'hébergeur l'affiche
+en général en haut de page. Sinon, poser trente secondes un fichier `chemin.php` à la racine :
 
 ```php
 <?php echo __DIR__;
 ```
 
-Appeler `https://votre-site.fr/chemin.php`, noter le resultat, **supprimer le fichier**.
+Appeler `https://votre-site.fr/chemin.php`, noter le résultat, **supprimer le fichier**.
 
-**2. Copier les trois fichiers a la racine du site.**
+**2. Copier les trois fichiers à la racine du site.**
 
-| Fichier du depot | Destination |
+| Fichier du dépôt | Destination |
 |---|---|
-| `htaccess-kill-switch.conf` | a coller **en haut** du `.htaccess` existant |
+| `htaccess-kill-switch.conf` | à coller **en haut** du `.htaccess` existant |
 | `maintenance.html` | `/maintenance.html` |
 | `PAUSE-OFF.txt` | `/PAUSE-OFF.txt` |
 
 Sauvegarder le `.htaccess` existant avant de le modifier. Pousser en **LF**, jamais en CRLF : un
 `.htaccess` en fins de ligne Windows produit des 500 sur certains serveurs.
 
-Dans le bloc colle, remplacer `votre-site.fr` par le domaine et
-`/kunden/homepages/NN/dXXXXXXXXX/htdocs/` par le chemin trouve a l'etape 1. Le chemin garde son
+Dans le bloc collé, remplacer `votre-site.fr` par le domaine et
+`/kunden/homepages/NN/dXXXXXXXXX/htdocs/` par le chemin trouvé à l'étape 1. Le chemin garde son
 slash final avant `PAUSE.txt`.
 
 **3. Recetter les deux sens, avant de confier l'interrupteur au client.**
@@ -94,18 +116,18 @@ curl -sI https://votre-site.fr/            # attendu : HTTP/2 200
 ```
 
 Tester en `http://` et en `https://`, avec et sans `www`, et sur chaque alias technique du domaine.
-Si l'hebergement porte plusieurs sites, verifier surtout que les **voisins repondent toujours 200**
+Si l'hébergement porte plusieurs sites, vérifier surtout que les **voisins répondent toujours 200**
 pendant que celui-ci est en pause.
 
 ### Renommer un fichier sans FTP : qui a un gestionnaire de fichiers web
 
-C'est la question qui decide si le client peut se servir de l'interrupteur tout seul. Etat au
+C'est la question qui décide si le client peut se servir de l'interrupteur tout seul. État au
 premier semestre 2026.
 
-| Hebergeur | Gestionnaire de fichiers dans le navigateur | Nom de l'outil |
+| Hébergeur | Gestionnaire de fichiers dans le navigateur | Nom de l'outil |
 |---|---|---|
 | IONOS | oui | WebTransfert (`login.ionos.fr`) |
-| OVHcloud | ⚠️ **non depuis 2026** | FTP Explorer et Net2FTP desactives, client FTP obligatoire |
+| OVHcloud | ⚠️ **non depuis 2026** | FTP Explorer et Net2FTP désactivés, client FTP obligatoire |
 | cPanel (tout revendeur) | oui | File Manager |
 | Plesk (tout revendeur) | oui | Gestionnaire de fichiers |
 | o2switch | oui | cPanel File Manager |
@@ -115,33 +137,33 @@ premier semestre 2026.
 | PlanetHoster | oui | cPanel / HCloud File Manager |
 | Gandi | non | SSH ou FTP uniquement |
 
-Chez ceux qui n'en ont pas, prevoir un client FTP installe et configure sur le poste du client
-(FileZilla, WinSCP, Cyberduck) avant de lui remettre la procedure. Renommer un fichier reste une
-operation triviale en FTP, mais elle suppose un logiciel deja pret.
+Chez ceux qui n'en ont pas, prévoir un client FTP installé et configuré sur le poste du client
+(FileZilla, WinSCP, Cyberduck) avant de lui remettre la procédure. Renommer un fichier reste une
+opération triviale en FTP, mais elle suppose un logiciel déjà prêt.
 
-### Les 3 pieges documentes
+### Les 3 pièges documentés
 
-**Piege 1 : `%{DOCUMENT_ROOT}` ment, et il ment sans erreur.**
-Chez IONOS, mesure sur deux vhosts distincts du meme espace, `%{DOCUMENT_ROOT}` vaut `/var/www/html`
+**Piège 1 : `%{DOCUMENT_ROOT}` ment, et il ment sans erreur.**
+Chez IONOS, mesuré sur deux vhosts distincts du même espace, `%{DOCUMENT_ROOT}` vaut `/var/www/html`
 pour tous. Le test `%{DOCUMENT_ROOT}/PAUSE.txt -f` est donc toujours faux. Pire : `%{DOCUMENT_ROOT}
--d` repond **vrai**, parce que le chemin existe dans le conteneur. Une regle ecrite avec cette
-variable a l'air de fonctionner et branche en realite **un seul interrupteur sur tous les sites de
-l'espace**. Les chemins relatifs (`PAUSE.txt`, `sous-dossier/PAUSE.txt`) echouent egalement. Seul le
+-d` répond **vrai**, parce que le chemin existe dans le conteneur. Une règle écrite avec cette
+variable a l'air de fonctionner et branche en réalité **un seul interrupteur sur tous les sites de
+l'espace**. Les chemins relatifs (`PAUSE.txt`, `sous-dossier/PAUSE.txt`) échouent également. Seul le
 chemin **absolu** est fiable. `%{REQUEST_FILENAME}` est la seule autre variable correctement
-positionnee par vhost.
+positionnée par vhost.
 
-**Piege 2 : la cascade sur les voisins du meme docroot.**
-Sur un mutualise, un second site vit souvent dans un sous-dossier du docroot du premier, sans
-`.htaccess` propre. Il herite alors de toutes les directives du parent. Une regle de maintenance
-sans garde d'hote coupe donc les voisins en meme temps. Incident constate : trois sites eteints d'un
-coup par une regle destinee a un seul. Le `RewriteCond %{HTTP_HOST} ^(www\.)?votre-site\.fr$ [NC]`
-n'est pas cosmetique, c'est ce qui rend l'interrupteur unitaire. Un site qui a son propre
-`.htaccess` avec `RewriteEngine On` coupe l'heritage des regles de reecriture du parent, mais pas
+**Piège 2 : la cascade sur les voisins du même docroot.**
+Sur un mutualisé, un second site vit souvent dans un sous-dossier du docroot du premier, sans
+`.htaccess` propre. Il hérite alors de toutes les directives du parent. Une règle de maintenance
+sans garde d'hôte coupe donc les voisins en même temps. Incident constaté : trois sites éteints d'un
+coup par une règle destinée à un seul. Le `RewriteCond %{HTTP_HOST} ^(www\.)?votre-site\.fr$ [NC]`
+n'est pas cosmétique, c'est ce qui rend l'interrupteur unitaire. Un site qui a son propre
+`.htaccess` avec `RewriteEngine On` coupe l'héritage des règles de réécriture du parent, mais pas
 celui des `Header`, `ErrorDocument` ou `FilesMatch`.
 
-**Piege 3 : la redirection canonique mange le 503.**
-Si le `.htaccess` force HTTPS ou `www` par un 301, cette redirection s'applique aussi a la
-sous-requete interne que Apache emet pour rendre `ErrorDocument`. Resultat : le visiteur recoit un
+**Piège 3 : la redirection canonique mange le 503.**
+Si le `.htaccess` force HTTPS ou `www` par un 301, cette redirection s'applique aussi à la
+sous-requête interne que Apache émet pour rendre `ErrorDocument`. Résultat : le visiteur reçoit un
 301, puis la page de maintenance en **200**, et Google enregistre un site normal avec une page
 bizarre. Correctif : exclure la page de maintenance du bloc canonique.
 
@@ -149,74 +171,74 @@ bizarre. Correctif : exclure la page de maintenance du bloc canonique.
 RewriteCond %{REQUEST_URI} !^/maintenance[.]html$
 ```
 
-Corollaire du meme mecanisme : Apache prefixe les variables d'environnement par `REDIRECT_` dans la
-sous-requete. D'ou les **deux** lignes `Retry-After`, `env=JW_MAINT` et `env=REDIRECT_JW_MAINT`.
-Avec une seule, l'en-tete manque sur la reponse reellement envoyee.
+Corollaire du même mécanisme : Apache préfixe les variables d'environnement par `REDIRECT_` dans la
+sous-requête. D'où les **deux** lignes `Retry-After`, `env=JW_MAINT` et `env=REDIRECT_JW_MAINT`.
+Avec une seule, l'en-tête manque sur la réponse réellement envoyée.
 
 ### Si vous administrez le serveur
 
-Le `.htaccess` est fait pour le cas ou l'on n'a pas la main sur la machine. Si vous l'avez, mettez la
-regle dans la configuration du serveur : elle y est plus rapide (aucun `.htaccess` a chercher et
-relire a chaque requete) et plus difficile a neutraliser par un fichier depose dans un repertoire
+Le `.htaccess` est fait pour le cas où l'on n'a pas la main sur la machine. Si vous l'avez, mettez la
+règle dans la configuration du serveur : elle y est plus rapide (aucun `.htaccess` à chercher et
+relire à chaque requête) et plus difficile à neutraliser par un fichier déposé dans un répertoire
 d'upload.
 
 | Fichier | Pour |
 |---|---|
-| [`htaccess-kill-switch.conf`](htaccess-kill-switch.conf) | mutualise, aucun acces serveur — le cas par defaut |
-| [`vhost-apache-kill-switch.conf`](vhost-apache-kill-switch.conf) | VPS/dedie sous Apache |
-| [`vhost-nginx-kill-switch.conf`](vhost-nginx-kill-switch.conf) | VPS/dedie sous nginx |
+| [`htaccess-kill-switch.conf`](htaccess-kill-switch.conf) | mutualisé, aucun accès serveur — le cas par défaut |
+| [`vhost-apache-kill-switch.conf`](vhost-apache-kill-switch.conf) | VPS/dédié sous Apache |
+| [`vhost-nginx-kill-switch.conf`](vhost-nginx-kill-switch.conf) | VPS/dédié sous nginx |
 
-Quatre pieges specifiques a ces versions serveur, tous documentes dans les fichiers :
+Quatre pièges spécifiques à ces versions serveur, tous documentés dans les fichiers :
 
-1. **`AllowOverride None` coupe TOUS les `.htaccess`**, dont celui de WordPress. Ses regles de
-   permaliens doivent etre remontees dans le vhost, sinon toutes les URLs tombent en 404. Le vhost
-   Apache fourni contient deja ce bloc. Dans le doute, gardez `AllowOverride All` : vous perdez le
-   gain de vitesse, l'interrupteur fonctionne quand meme.
-2. **Sous nginx, `error_page 503 @maintenance;` s'ecrit SANS signe egal.** La doc officielle illustre
-   pourtant les locations nommees avec `error_page 404 = @fallback;`. Recopier ce `=` fait *adopter*
-   le code du gestionnaire : le 503 devient un 200, et le site se fait desindexer par la manoeuvre
-   censee l'en proteger.
-3. **`rewrite ^ /maintenance.html break;` degrade en 404** si le fichier manque, parce que le statut
-   de la derniere erreur l'emporte. `try_files /maintenance.html =503;` est la seule forme qui ne
-   peut pas degrader le code.
+1. **`AllowOverride None` coupe TOUS les `.htaccess`**, dont celui de WordPress. Ses règles de
+   permaliens doivent être remontées dans le vhost, sinon toutes les URLs tombent en 404. Le vhost
+   Apache fourni contient déjà ce bloc. Dans le doute, gardez `AllowOverride All` : vous perdez le
+   gain de vitesse, l'interrupteur fonctionne quand même.
+2. **Sous nginx, `error_page 503 @maintenance;` s'écrit SANS signe égal.** La doc officielle illustre
+   pourtant les locations nommées avec `error_page 404 = @fallback;`. Recopier ce `=` fait *adopter*
+   le code du gestionnaire : le 503 devient un 200, et le site se fait désindexer par la manœuvre
+   censée l'en protéger.
+3. **`rewrite ^ /maintenance.html break;` dégrade en 404** si le fichier manque, parce que le statut
+   de la dernière erreur l'emporte. `try_files /maintenance.html =503;` est la seule forme qui ne
+   peut pas dégrader le code.
 4. **Sous nginx, tester `$uri` et non `$request_uri`** pour les exemptions : `$request_uri` inclut la
    query string, donc `/robots.txt?v=2` ne matche pas l'ancre de fin et part en 503 — exactement le
-   cas que Google penalise.
+   cas que Google pénalise.
 
-Le `if` au niveau `server` n'est pas un probleme, contrairement a ce qu'on lit partout : la page qui
-a fait sa reputation s'intitule *« If is Evil… when used in location context »* et indique
-explicitement qu'on peut remonter les `if` au niveau `server`, « ou c'est sur ».
+Le `if` au niveau `server` n'est pas un problème, contrairement à ce qu'on lit partout : la page qui
+a fait sa réputation s'intitule *« If is Evil… when used in location context »* et indique
+explicitement qu'on peut remonter les `if` au niveau `server`, « où c'est sûr ».
 
-### Ce que ca ne fait pas
+### Ce que ça ne fait pas
 
-Ca coupe. Ca ne repare pas, ca ne desinfecte pas.
+Ça coupe. Ça ne répare pas, ça ne désinfecte pas.
 
-- **Ce n'est pas une remediation.** Un site pirate reste pirate derriere son 503. Les portes
-  d'entree (identifiants voles, extension vulnerable, poste du client infecte) restent ouvertes.
-  L'interrupteur achete du temps propre pour travailler, il ne remplace aucune etape du nettoyage.
-- **Ca ne bloque pas l'attaquant deja dedans.** Un acces SFTP ou une session admin volee continue de
-  fonctionner : le 503 concerne le trafic HTTP public, pas les autres canaux. La regle anti-reshell
-  du fichier complet limite l'execution de PHP dans `uploads/`, ce qui est un durcissement, pas une
+- **Ce n'est pas une remédiation.** Un site piraté reste piraté derrière son 503. Les portes
+  d'entrée (identifiants volés, extension vulnérable, poste du client infecté) restent ouvertes.
+  L'interrupteur achète du temps propre pour travailler, il ne remplace aucune étape du nettoyage.
+- **Ça ne bloque pas l'attaquant déjà dedans.** Un accès SFTP ou une session admin volée continue de
+  fonctionner : le 503 concerne le trafic HTTP public, pas les autres canaux. La règle anti-reshell
+  du fichier complet limite l'exécution de PHP dans `uploads/`, ce qui est un durcissement, pas une
   garantie.
-- **Ca ne protege pas le back-office.** `/wp-admin` repond 503 comme le reste. Utile pour couper les
-  bots, inutile comme controle d'acces. Un vrai verrou, c'est un `.htpasswd` ou un filtre IP.
-- **Ca ne surveille rien.** Personne n'est prevenu quand le site tombe pour de vrai. Brancher une
-  sonde de disponibilite, et la configurer pour ne pas alerter sur les 503 volontaires.
-- **Ca depend d'Apache**, du moins dans sa version `.htaccess`. Nginx ne lit pas de `.htaccess` : sa
-  configuration est centralisee, donc il faut un acces a la machine. L'equivalent exact est fourni
-  dans [`vhost-nginx-kill-switch.conf`](vhost-nginx-kill-switch.conf), audite contre la
-  documentation officielle. Sur un mutualise nginx, vous n'avez pas cet acces : demandez a
-  l'hebergeur.
-- **Ca laisse le cache tiers en travers.** Un CDN ou un cache de page peut continuer a servir des
-  copies HTML pendant plusieurs minutes. Purger apres avoir bascule l'interrupteur.
+- **Ça ne protège pas le back-office.** `/wp-admin` répond 503 comme le reste. Utile pour couper les
+  bots, inutile comme contrôle d'accès. Un vrai verrou, c'est un `.htpasswd` ou un filtre IP.
+- **Ça ne surveille rien.** Personne n'est prévenu quand le site tombe pour de vrai. Brancher une
+  sonde de disponibilité, et la configurer pour ne pas alerter sur les 503 volontaires.
+- **Ça dépend d'Apache**, du moins dans sa version `.htaccess`. Nginx ne lit pas de `.htaccess` : sa
+  configuration est centralisée, donc il faut un accès à la machine. L'équivalent exact est fourni
+  dans [`vhost-nginx-kill-switch.conf`](vhost-nginx-kill-switch.conf), audité contre la
+  documentation officielle. Sur un mutualisé nginx, vous n'avez pas cet accès : demandez à
+  l'hébergeur.
+- **Ça laisse le cache tiers en travers.** Un CDN ou un cache de page peut continuer à servir des
+  copies HTML pendant plusieurs minutes. Purger après avoir basculé l'interrupteur.
 
-### Licence et references
+### Licence et références
 
 MIT, voir [LICENSE](LICENSE).
 
-- Article detaille : <https://julienweb.fr/blog/mettre-site-wordpress-en-pause-htaccess/11426/>
-- Site pirate, plainte, prestataires agrees : <https://www.cybermalveillance.gouv.fr/>
-- Auteur : Julien Guezennec, [julienweb.fr](https://julienweb.fr), contact@julienweb.fr
+- Article détaillé : <https://julienweb.fr/blog/mettre-site-wordpress-en-pause-htaccess/11426/>
+- Site piraté, plainte, prestataires agréés : <https://www.cybermalveillance.gouv.fr/>
+- Auteur : Julien Guézennec, [julienweb.fr](https://julienweb.fr), contact@julienweb.fr
 
 ---
 
@@ -224,7 +246,7 @@ MIT, voir [LICENSE](LICENSE).
 
 ### The problem
 
-No shared host ships a « pause my site » button. Not IONOS, not OVHcloud, not any of the others. The
+No shared host ships a "pause my site" button. Not IONOS, not OVHcloud, not any of the others. The
 only options a customer has are destructive: delete the files, change DNS, cancel the plan. All are
 hard to undo and all cost SEO.
 
@@ -243,10 +265,22 @@ Two pieces. A **flag file** at the site root whose *name* carries the state (`PA
 live, `PAUSE.txt` for paused), and an **`.htaccess` block** that checks for it on every request and
 answers 503 + `maintenance.html` + `Retry-After: 3600`.
 
-503 is the only status Google reads as « come back later »: crawling pauses, rankings freeze,
+503 is the only status Google reads as "come back later": crawling pauses, rankings freeze,
 nothing gets deindexed. `robots.txt` keeps being served. `maintenance.html` is self-contained
 (no fonts, no CDN, no script, about 1.7 kB, `noindex, follow`) so it renders even when everything
 else is dead. Both flag files return 403 over HTTP.
+
+### What's in the repo
+
+| File | Purpose |
+|---|---|
+| [`htaccess-kill-switch.conf`](htaccess-kill-switch.conf) | the block to paste at the top of an existing `.htaccess` |
+| [`htaccess-complet-exemple.conf`](htaccess-complet-exemple.conf) | a full hardened `.htaccess`, switch included |
+| [`vhost-apache-kill-switch.conf`](vhost-apache-kill-switch.conf) | the same rule as Apache server config |
+| [`vhost-nginx-kill-switch.conf`](vhost-nginx-kill-switch.conf) | the nginx equivalent, audited against the official docs |
+| [`maintenance.html`](maintenance.html) | the page served while paused, self-contained and `noindex` |
+| [`PAUSE-OFF.txt`](PAUSE-OFF.txt) | the flag file, with its instructions written inside |
+| [`tutoriel-client/`](tutoriel-client/) | the walkthrough to hand over to the customer (HTML and PDF, in French) |
 
 ### Install in 3 steps
 
@@ -340,4 +374,4 @@ It cuts. It does not fix, and it does not clean.
 
 ### License
 
-MIT, see [LICENSE](LICENSE). Written by Julien Guezennec, [julienweb.fr](https://julienweb.fr).
+MIT, see [LICENSE](LICENSE). Written by Julien Guézennec, [julienweb.fr](https://julienweb.fr).
